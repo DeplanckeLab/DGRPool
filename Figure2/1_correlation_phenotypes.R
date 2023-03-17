@@ -1,6 +1,6 @@
 ##################################################
 ## Project: DGRPool
-## Script purpose: Calculating phenotype-phenotype correlations,R2,p-value from RDS
+## Script purpose: Calculating phenotype-phenotype correlations,R2,p-value
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 12
 ## Date Modified: 2022 Dec 22
@@ -8,13 +8,13 @@
 ##################################################
 
 # Working directory
-setwd("DGRPool/") # Root folder
+setwd("/data/gardeux/DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(data.table))
 
 ## Load phenotype data (run download_phenotypes.R script first)
-data.all_pheno <- readRDS(file = "RDS/data.all_pheno_10_03_03.rds")
+data.all_pheno <- readRDS(file = "data.all_pheno_17_03_23_filtered.rds")
 
 ## Correlations
 allpheno <- c(paste0(colnames(data.all_pheno[["F"]]), "_F")[2:ncol(data.all_pheno[["F"]])], paste0(colnames(data.all_pheno[["M"]]), "_M")[2:ncol(data.all_pheno[["M"]])], paste0(colnames(data.all_pheno[["NA"]]), "_NA")[2:ncol(data.all_pheno[["NA"]])])
@@ -40,7 +40,7 @@ cnt <- 0
 for(sex_1 in c("F", "M", "NA")) {
 	phenotype_all_1 <- data.all_pheno[[sex_1]]
 	for(i in 2:ncol(phenotype_all_1)){ # First column is DGRP
-		phenotype_1 <- phenotype_all_1[,i]
+		phenotype_1 <- as.numeric(phenotype_all_1[,i])
 		phenotype_1_name <- paste0(colnames(phenotype_all_1)[i], "_", sex_1)
 		non_na_1 <- which(!is.na(phenotype_1))
 		dgrp_name_1 <- rownames(phenotype_all_1)[non_na_1]
@@ -48,7 +48,7 @@ for(sex_1 in c("F", "M", "NA")) {
 		for(sex_2 in c("F", "M", "NA")) {
 			phenotype_all_2 <- data.all_pheno[[sex_2]]
 			for(j in 2:ncol(phenotype_all_2)){ # First column is DGRP
-				phenotype_2 <- phenotype_all_2[,j]
+				phenotype_2 <- as.numeric(phenotype_all_2[,j])
 				phenotype_2_name <- paste0(colnames(phenotype_all_2)[j], "_", sex_2)
 				non_na_2 <- which(!is.na(phenotype_2))
 				dgrp_name_2 <- rownames(phenotype_all_2)[non_na_2]
@@ -57,8 +57,8 @@ for(sex_1 in c("F", "M", "NA")) {
 				# Compute correlation
 				if(length(dgrp_name) > 1)
 				{
-					phenotype_1 <- phenotype_all_1[dgrp_name,i]
-					phenotype_2 <- phenotype_all_2[dgrp_name,j]
+					phenotype_1 <- as.numeric(phenotype_all_1[dgrp_name,i])
+					phenotype_2 <- as.numeric(phenotype_all_2[dgrp_name,j])
 					if(var(phenotype_1) != 0 & var(phenotype_2) != 0)
 					{
 						c_pearson <- cor(phenotype_1, phenotype_2, method = "pearson")
