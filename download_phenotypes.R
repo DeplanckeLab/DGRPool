@@ -3,31 +3,33 @@
 ## Script purpose: Downloading phenotypes using JSON API
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 22
-## Date Modified: 2023 Mar 17
+## Date Modified: 2023 Mar 15
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
 
 # Working directory
-setwd("DGRPool/") # Root folder
+setwd("/data/gardeux/DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(data.table))
 
 # Reading all studies
-json_studies <- fromJSON("https://dgrpool.epfl.ch/studies.json") # Download from DGRPool API
+json_studies <- fromJSON("https://dgrpool.epfl.ch/studies.json")
 json_studies <- json_studies[with(json_studies, order(id)),]
 rownames(json_studies) <- json_studies$id
 message(nrow(json_studies), " studies found")
 
 # Reading all phenotypes
-json_phenotypes <- fromJSON("https://dgrpool.epfl.ch/phenotypes.json?all=1") # Download from DGRPool API
+json_phenotypes <- fromJSON("https://dgrpool.epfl.ch/phenotypes.json?all=1")
 json_phenotypes <- json_phenotypes[with(json_phenotypes, order(id)),]
 rownames(json_phenotypes) <- json_phenotypes$id
 message(nrow(json_phenotypes), " phenotypes found")
 
 # Reading all "standard" DGRP lines
-data.dgrp_lines <- fread("dgrp2.fam")$V1
+data_dgrps <- fread("https://dgrpool.epfl.ch/studies/1/get_file?name=dgrp_lines.tsv&namespace=downloads", sep = "\t", data.table = F)
+data.dgrp_lines <- data_dgrps$dgrp
+message(length(unique(data.dgrp_lines)), " DGRP lines found")
 
 total_phenotype_number <- 0
 nb_issues <- c()
@@ -89,17 +91,17 @@ for(sid in json_studies$id) {
 			}
 			
 			# Match our data
-			dgrp_lines <- gsub(x = dgrp_lines, pattern = "DGRP", replacement = "line")
-			dgrp_lines <- gsub(x = dgrp_lines, pattern = "line_0", replacement = "line_")
-			dgrp_lines <- gsub(x = dgrp_lines, pattern = "line_0", replacement = "line_")
-			common_lines <- intersect(data.dgrp_lines, dgrp_lines)
-			if(length(common_lines) != length(dgrp_lines)){
-				message("[WARNING] Only ", length(common_lines), " lines intersect with the reference ", length(data.dgrp_lines), " lines. ", length(dgrp_lines) - length(common_lines), " line phenotypes are ignored.")	
-			}
+			#dgrp_lines <- gsub(x = dgrp_lines, pattern = "DGRP", replacement = "line")
+			#dgrp_lines <- gsub(x = dgrp_lines, pattern = "line_0", replacement = "line_")
+			#dgrp_lines <- gsub(x = dgrp_lines, pattern = "line_0", replacement = "line_")
+			#common_lines <- intersect(data.dgrp_lines, dgrp_lines)
+			#if(length(common_lines) != length(dgrp_lines)){
+			#	message("[WARNING] Only ", length(common_lines), " lines intersect with the reference ", length(data.dgrp_lines), " lines. ", length(dgrp_lines) - length(common_lines), " line phenotypes are ignored.")	
+			#}
 			for(sex in names(data_pheno))
 			{
 				phenotypes <- data_pheno[[sex]]
-				phenotypes$dgrp <- gsub(x = phenotypes$dgrp, pattern = "DGRP", replacement = "line")
+				#phenotypes$dgrp <- gsub(x = phenotypes$dgrp, pattern = "DGRP", replacement = "line")
 				rownames(phenotypes) <- phenotypes$dgrp
 				data.all_pheno[[sex]][phenotypes$dgrp,paste0("S", sid, "_", colnames(phenotypes)[colnames(phenotypes) != "dgrp"])] <- phenotypes[,colnames(phenotypes) != "dgrp"]
 			}
@@ -136,5 +138,5 @@ message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = 
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with undefined sex data")
 
 ## Save object
-saveRDS(data.all_pheno, file = "RDS/data.all_pheno_17_03_23_filtered.rds")
+saveRDS(data.all_pheno, file = "data.all_pheno_17_03_23_filtered.rds")
 
