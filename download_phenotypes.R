@@ -138,5 +138,5 @@ message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = 
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with undefined sex data")
 
 ## Save object
-saveRDS(data.all_pheno, file = "data.all_pheno_17_03_23_filtered.rds")
+saveRDS(data.all_pheno, file = "data.all_pheno_20_03_23_filtered.rds")
 
