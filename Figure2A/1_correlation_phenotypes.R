@@ -3,18 +3,18 @@
 ## Script purpose: Calculating phenotype-phenotype correlations,R2,p-value
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 12
-## Date Modified: 2022 Dec 22
+## Date Modified: 2022 Mar 21
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
 
 # Working directory
-setwd("/data/gardeux/DGRPool/")
+setwd("DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(data.table))
 
 ## Load phenotype data (run download_phenotypes.R script first)
-data.all_pheno <- readRDS(file = "data.all_pheno_17_03_23_filtered.rds")
+data.all_pheno <- readRDS(file = "RDS/data.all_pheno_21_03_23_filtered.rds")
 
 ## Correlations
 allpheno <- c(paste0(colnames(data.all_pheno[["F"]]), "_F")[2:ncol(data.all_pheno[["F"]])], paste0(colnames(data.all_pheno[["M"]]), "_M")[2:ncol(data.all_pheno[["M"]])], paste0(colnames(data.all_pheno[["NA"]]), "_NA")[2:ncol(data.all_pheno[["NA"]])])
