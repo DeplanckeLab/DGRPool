@@ -3,7 +3,7 @@
 ## Script purpose: Running GWAS
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 22
-## Date Modified: 2023 Mar 10
+## Date Modified: 2023 Mar 23
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
 
