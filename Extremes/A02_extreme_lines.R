@@ -15,6 +15,7 @@ library(tidylog)#1.0.2
 library(jsonlite)#1.8.0
 library(ggplot2)#3.3.5
 library(patchwork)#1.1.2
+library(wordcloud)#2.6
 
 # Load objects --------------------------------------------
 
@@ -43,6 +44,8 @@ extreme_dgrp_fraction_sex_diff <- extreme_dgrp_fraction_thes_summ_tmp %>%
   rename(extreme_F = "F",
          extreme_M = "M")
 
+save(extreme_dgrp_fraction_sex_diff, file = "Extremes/extreme_dgrp_fraction_sex_diff.RData")
+
 c_pearson <- cor(extreme_dgrp_fraction_sex_diff$extreme_F, 
                  extreme_dgrp_fraction_sex_diff$extreme_M,
                  use = "pairwise.complete.obs",
@@ -59,14 +62,13 @@ message("Spearman correlation: ",round(c_spearman,3),"\n",
         "Pearson correlation: ",round(c_pearson,3),"\n",
         "Regression p-value: ",pval,", with R-squared: ",round(rsq,3))
 
-ggplot(extreme_dgrp_fraction_sex_diff, 
+pExtScatt <- ggplot(extreme_dgrp_fraction_sex_diff, 
        aes(x = extreme_F, y = extreme_M,
            label = dgrp)) +
   geom_point() +
   scale_x_continuous(expand=c(0,0), limits = c(0,1), breaks = seq(0,1,.1)) +
   scale_y_continuous(expand=c(0,0), limits = c(0,1), breaks = seq(0,1,.1)) +
   geom_text(hjust = 0)
-
 
 # Individual lines and extremes ---------------------------
 
@@ -118,14 +120,72 @@ extreme_lines_both_sex_perPheno_fraction <- phenotype_pivot_curated_ranked %>%
 save(extreme_lines_both_sex_perPheno_fraction, file = "Extremes/extreme_lines_both_sex_perPheno_fraction.RData")
 
 
+# Potential biologically relevant extreme phenotypes ------
+top5_extreme_by_sex <- extreme_dgrp_fraction_thes_summ_tmp %>% 
+  group_by(sex) %>% 
+    arrange(desc(fraction_extreme)) %>% 
+    slice(1:5) %>% 
+  ungroup() %>% 
+  add_column(line_category = "extreme") %>% 
+  bind_rows(extreme_dgrp_fraction_thes_summ_tmp %>% 
+              group_by(sex) %>% 
+                arrange(fraction_extreme) %>% 
+                slice(1:5) %>% 
+              ungroup() %>% 
+              add_column(line_category = "mediocre") ) %>% 
+  arrange(sex,fraction_extreme) %>% 
+  mutate(dgrp_sex_tag = paste(dgrp, sex, sep = "_")) 
 
+top5_extreme_lines_phenotypes <- phenotype_pivot_curated_ranked %>% 
+  mutate(dgrp_sex_tag = paste(dgrp, sex, sep = "_")) %>% 
+  filter(dgrp_sex_tag %in% top5_extreme_by_sex$dgrp_sex_tag) %>% 
+  select(dgrp, phenotype_tag_sex, phenotype_tag, sex, dgrp_sex_tag,
+         phenotype_value,
+         rank_real, rank_thes_prop, rank_thes_eval) %>% 
+  left_join(top5_extreme_by_sex %>% 
+              select(dgrp_sex_tag, line_category),
+            by = c("dgrp_sex_tag"))
 
+extreme_lines_extreme_phe <- top5_extreme_lines_phenotypes %>% 
+  filter(rank_thes_eval %in% c(-1,1) & line_category == "extreme") 
 
+mediocre_line_mediocre_phe <- top5_extreme_lines_phenotypes %>% 
+  filter(rank_thes_eval %in% c(0) & line_category == "mediocre") 
 
+extreme_lines_extreme_phe %>% 
+  count(dgrp_sex_tag)
+mediocre_line_mediocre_phe %>% 
+  count(dgrp_sex_tag)
 
+phenotypes_in_extreme <- extreme_lines_extreme_phe %>% 
+  group_by(sex) %>% 
+    count(phenotype_tag, phenotype_tag_sex, sort = T) %>% 
+  ungroup() %>% 
+  left_join(phenotypes %>% 
+              select(phenotype_tag, study_id, phenotype_name, description),
+            by = "phenotype_tag") %>% 
+  filter(n >= 4) 
 
+phenotypes_in_mediocre <- mediocre_line_mediocre_phe %>% 
+  group_by(sex) %>% 
+    count(phenotype_tag, phenotype_tag_sex, sort = T) %>% 
+  ungroup() %>% 
+  left_join(phenotypes %>% 
+              select(phenotype_tag, study_id, phenotype_name, description),
+            by = "phenotype_tag") %>% 
+  filter(n >= 4)
+  
+tmp <- mediocre_line_mediocre_phe %>% 
+  left_join(phenotypes %>% 
+              select(phenotype_tag, study_id, phenotype_name, description),
+            by = "phenotype_tag") %>% 
+  mutate(phenotype_name_clean = str_replace_all(phenotype_name, "_"," "))
 
-
-
+wordcloud(words = tmp$phenotype_name_clean,
+          min_freq = 4,
+          scale = c(4,0.5),
+          max.words = 200,
+          random.order = F,
+          rot.per = 0.3)
 
 

@@ -29,7 +29,7 @@ message(nrow(json_phenotypes), " phenotypes found")
 
 # Load objects --------------------------------------------
 
-base_all_pheno <- readRDS(file="RDS/data.all_pheno_20_03_23_filtered.rds")
+base_all_pheno <- readRDS(file="RDS/data.all_pheno_21_03_23_filtered.rds")
 names(base_all_pheno)
 
 phenotypes <- read_tsv("resources/phenotypes.tsv", col_names = T) %>% 
