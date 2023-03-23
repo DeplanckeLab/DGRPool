@@ -3,12 +3,12 @@
 ## Script purpose: Downloading phenotypes using JSON API
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 22
-## Date Modified: 2023 Mar 15
+## Date Modified: 2023 Mar 21
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
 
 # Working directory
-setwd("/data/gardeux/DGRPool/")
+setwd("DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(jsonlite))
@@ -138,5 +138,5 @@ message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = 
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with undefined sex data")
 
 ## Save object
-saveRDS(data.all_pheno, file = "data.all_pheno_20_03_23_filtered.rds")
+saveRDS(data.all_pheno, file = "RDS/data.all_pheno_21_03_23_filtered.rds")
 
