@@ -1,0 +1,44 @@
+Anova Table (Type III tests)
+
+Response: high_extreme_NA
+                  Sum Sq  Df  F value Pr(>F)    
+(Intercept)      1.78505   1 133.0515 <2e-16 ***
+factor(wolba)    0.00003   1   0.0021 0.9634    
+factor(In_2L_t)  0.01944   2   0.7244 0.4860    
+factor(In_2R_NS) 0.02547   2   0.9494 0.3889    
+factor(In_3R_P)  0.05593   2   2.0843 0.1273    
+factor(In_3R_K)  0.04237   2   1.5791 0.2089    
+factor(In_3R_Mo) 0.03397   2   1.2662 0.2844    
+Residuals        2.45516 183                    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Call:
+lm(formula = as.formula(paste0(phenotype_name, " ~ ", paste0(covars, 
+    collapse = " + "))), data = data.cov)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.17572 -0.08448 -0.02502  0.05790  0.44993 
+
+Coefficients:
+                    Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        0.1686669  0.0146224  11.535   <2e-16 ***
+factor(wolba)y    -0.0007916  0.0172143  -0.046   0.9634    
+factor(In_2L_t)1   0.0311439  0.0288092   1.081   0.2811    
+factor(In_2L_t)2  -0.0123086  0.0306458  -0.402   0.6884    
+factor(In_2R_NS)1  0.0146603  0.0430121   0.341   0.7336    
+factor(In_2R_NS)2 -0.0589193  0.0449405  -1.311   0.1915    
+factor(In_3R_P)1   0.1080013  0.0528972   2.042   0.0426 *  
+factor(In_3R_P)2   0.0039009  0.0589581   0.066   0.9473    
+factor(In_3R_K)1   0.0749021  0.0422918   1.771   0.0782 .  
+factor(In_3R_K)2   0.0139820  0.0680548   0.205   0.8374    
+factor(In_3R_Mo)1  0.0641482  0.0423054   1.516   0.1312    
+factor(In_3R_Mo)2  0.0174524  0.0306994   0.568   0.5704    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1158 on 183 degrees of freedom
+Multiple R-squared:  0.07039,	Adjusted R-squared:  0.01451 
+F-statistic:  1.26 on 11 and 183 DF,  p-value: 0.2511
+

@@ -1,0 +1,54 @@
+{
+  "pheno_file": "extreme_phenotype.tsv",
+  "genotype_file": "/data/gardeux/DGRPool/dgrp2",
+  "covariate_file": "/data/gardeux/DGRPool/dgrp.cov.tsv",
+  "annotation_file": "/data/gardeux/DGRPool/dgrp.fb557.annot.txt.gz",
+  "output_folder": "total_nr_phenotypes/",
+  "nb_threads": 32,
+  "genotype_ratio": 0.2,
+  "min_maf": 0.05,
+  "pheno_column": 6,
+  "which_sex": ["F", "M", "NA"],
+  "pheno_name": "total_nr_phenotypes",
+  "results": {
+    "F": {
+      "nb_used_dgrps": 300,
+      "plink_phenotype_file": "total_nr_phenotypes/total_nr_phenotypes_F.pheno.plink2.tsv",
+      "covariate_anova_file": "total_nr_phenotypes/total_nr_phenotypes_F.cov.anova.txt",
+      "plink_full_output_file": "total_nr_phenotypes/total_nr_phenotypes_F.glm.linear",
+      "plink_full_log_file": "total_nr_phenotypes/total_nr_phenotypes_F.glm.linear.log",
+      "gwas_file_suffix": ".glm.linear",
+      "gwas_model": "GLM Linear",
+      "gwas_type": "continuous (quantitative)",
+      "qq_plot": "total_nr_phenotypes/total_nr_phenotypes_F.qqplot.png",
+      "manhattan_plot": "total_nr_phenotypes/total_nr_phenotypes_F.manhattan.png",
+      "plink_filtered_output_file": "total_nr_phenotypes/total_nr_phenotypes_F.glm.linear.top_0.01.annot.tsv.gz"
+    },
+    "M": {
+      "nb_used_dgrps": 299,
+      "plink_phenotype_file": "total_nr_phenotypes/total_nr_phenotypes_M.pheno.plink2.tsv",
+      "covariate_anova_file": "total_nr_phenotypes/total_nr_phenotypes_M.cov.anova.txt",
+      "plink_full_output_file": "total_nr_phenotypes/total_nr_phenotypes_M.glm.linear",
+      "plink_full_log_file": "total_nr_phenotypes/total_nr_phenotypes_M.glm.linear.log",
+      "gwas_file_suffix": ".glm.linear",
+      "gwas_model": "GLM Linear",
+      "gwas_type": "continuous (quantitative)",
+      "qq_plot": "total_nr_phenotypes/total_nr_phenotypes_M.qqplot.png",
+      "manhattan_plot": "total_nr_phenotypes/total_nr_phenotypes_M.manhattan.png",
+      "plink_filtered_output_file": "total_nr_phenotypes/total_nr_phenotypes_M.glm.linear.top_0.01.annot.tsv.gz"
+    },
+    "NA": {
+      "nb_used_dgrps": 220,
+      "plink_phenotype_file": "total_nr_phenotypes/total_nr_phenotypes_NA.pheno.plink2.tsv",
+      "covariate_anova_file": "total_nr_phenotypes/total_nr_phenotypes_NA.cov.anova.txt",
+      "plink_full_output_file": "total_nr_phenotypes/total_nr_phenotypes_NA.glm.linear",
+      "plink_full_log_file": "total_nr_phenotypes/total_nr_phenotypes_NA.glm.linear.log",
+      "gwas_file_suffix": ".glm.linear",
+      "gwas_model": "GLM Linear",
+      "gwas_type": "continuous (quantitative)",
+      "qq_plot": "total_nr_phenotypes/total_nr_phenotypes_NA.qqplot.png",
+      "manhattan_plot": "total_nr_phenotypes/total_nr_phenotypes_NA.manhattan.png",
+      "plink_filtered_output_file": "total_nr_phenotypes/total_nr_phenotypes_NA.glm.linear.top_0.01.annot.tsv.gz"
+    }
+  }
+} 
