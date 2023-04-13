@@ -137,14 +137,15 @@ for(s in results$which_sex) {
 	suppressWarnings(phenotype <<- as.numeric(phenotype))
 	
 	## Fix weird names
-	phenotype_name <- gsub(phenotype_name, pattern = " ", replacement = "_")
-	phenotype_name <- gsub(phenotype_name, pattern = "\ub0", replacement = "") # degree sign
-	phenotype_name <- gsub(phenotype_name, pattern = "\\(", replacement = "")
-	phenotype_name <- gsub(phenotype_name, pattern = "\\)", replacement = "")
-	phenotype_name <- gsub(phenotype_name, pattern = "-", replacement = "_")
-	phenotype_name <- gsub(phenotype_name, pattern = "/", replacement = "_")
-	phenotype_name <- gsub(phenotype_name, pattern = ":", replacement = "")
-	phenotype_name <- gsub(phenotype_name, pattern = "%", replacement = "")
+	#phenotype_name <- gsub(phenotype_name, pattern = " ", replacement = "_")
+	#phenotype_name <- gsub(phenotype_name, pattern = "\ub0", replacement = "") # degree sign
+	#phenotype_name <- gsub(phenotype_name, pattern = "\\(", replacement = "")
+	#phenotype_name <- gsub(phenotype_name, pattern = "\\)", replacement = "")
+	#phenotype_name <- gsub(phenotype_name, pattern = "-", replacement = "_")
+	#phenotype_name <- gsub(phenotype_name, pattern = "/", replacement = "_")
+	#phenotype_name <- gsub(phenotype_name, pattern = ":", replacement = "")
+	#phenotype_name <- gsub(phenotype_name, pattern = "%", replacement = "")
+	phenotype_name <- gsub(phenotype_name, pattern = "[^a-zA-Z0-9]+", replacement = "_")
 	
 	## Removing NAs
 	non_na <- which(!is.na(phenotype))
@@ -216,7 +217,7 @@ for(s in results$which_sex) {
 			std.out <- NULL
 			tryCatch(
 			{
-				std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno ",results$results[[s]]$plink_phenotype_file," --out  ", results$output_folder, "PLINK2"), intern = T, ignore.stderr = T, ignore.stdout = F)
+				std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno \"",results$results[[s]]$plink_phenotype_file,"\" --out \"", results$output_folder, "PLINK2\""), intern = T, ignore.stderr = T, ignore.stdout = F)
 			},
 			warning=function(cond) {
 				if(grepl(x = cond, pattern = "had status 7")) {
@@ -224,7 +225,7 @@ for(s in results$which_sex) {
 					message(results$results[[s]][["error_message"]])
 				} else {
 					# I redo it without catching the warnings... It's ugly I know
-					std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno ",results$results[[s]]$plink_phenotype_file," --out  ", results$output_folder, "PLINK2"), intern = T, ignore.stderr = T, ignore.stdout = F)
+					std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno \"",results$results[[s]]$plink_phenotype_file,"\" --out \"", results$output_folder, "PLINK2\""), intern = T, ignore.stderr = T, ignore.stdout = F)
 				}
 			})
 			
@@ -276,17 +277,31 @@ for(s in results$which_sex) {
 					
 					## QQPLOT before filtering
 					results$results[[s]][["qq_plot"]] <- paste0(results$output_folder, phenotype_name, ".qqplot.png")
+					results$results[[s]][["qq_plot_pdf"]] <- paste0(results$output_folder, phenotype_name, ".qqplot.pdf")
 					plink_results$P[plink_results$P == 0] <- 1E-255 # For avoiding errors
 					png(results$results[[s]][["qq_plot"]], height = 500, width = 500)
-					qqPlotFast(plink_results$P, ci.level = NULL, col = "black", makelegend = F, lwd = 1)
+					qqPlotFast(plink_results$P, ci.level = NULL, col = "black", makelegend = F, lwd = 1, newplot = T)
 					dev.off()
 		
+					# SVG is way too big. So let's go PDF
+					# I recompute the plot... I know it's not optimal but I don't know how to do it else
+					pdf(results$results[[s]][["qq_plot_pdf"]], height = 7, width = 7)
+					qqPlotFast(plink_results$P, ci.level = NULL, col = "black", makelegend = F, lwd = 1, newplot = T)
+					dev.off()
+					
 					## Manhattan plot
 					results$results[[s]][["manhattan_plot"]] <- paste0(results$output_folder, phenotype_name, ".manhattan.png")
+					results$results[[s]][["manhattan_plot_pdf"]] <- paste0(results$output_folder, phenotype_name, ".manhattan.pdf")
 					chroms <- factor(plink_results$`#CHROM`)
 					levels(chroms) <- c("2L", "2R", "3L", "3R", "X", "4")
 					m <- manPlotPrepare(pvalues = plink_results$P, chr=chroms, pos = plink_results$POS)
 					png(results$results[[s]][["manhattan_plot"]], height = 500, width = 500)
+					manPlotFast(man = m, lwd = 1, colorSet = c("black", "darkgrey"))
+					dev.off()
+					
+					# SVG is way too big. So let's go PDF
+					# I recompute the plot... I know it's not optimal but I don't know how to do it else
+					pdf(results$results[[s]][["manhattan_plot_pdf"]], height = 7, width = 7)
 					manPlotFast(man = m, lwd = 1, colorSet = c("black", "darkgrey"))
 					dev.off()
 					
@@ -303,7 +318,7 @@ for(s in results$which_sex) {
 					plink_results$`#CHROM`[plink_results$`#CHROM` == 5] <- "X"
 					plink_results$`#CHROM`[plink_results$`#CHROM` == 6] <- "4"
 					fwrite(x = plink_results, file = paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv"), sep = "\t", quote = F, row.names = F, col.names = T)
-					system(paste0("gzip -f ", results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv"))
+					system(paste0("gzip -f \"", results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv\""))
 					results$results[[s]][["plink_filtered_output_file"]] <- paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv.gz")
 				}
 			}
