@@ -13,4 +13,4 @@ In the GWAS folder, we provide the two R scripts that are used to generate the G
 
 # Online Website
 [https://dgrpool.epfl.ch/](https://dgrpool.epfl.ch/)
-[https://dgrpool.epfl.ch/](TEST)
+[TEST](https://dgrpool.epfl.ch/)
