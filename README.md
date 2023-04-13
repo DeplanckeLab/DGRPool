@@ -9,8 +9,7 @@ It then generates a RDS file with a given timestamp, which is the common file us
 All scripts needed to reproduce Figures of the paper are in their respective FigureXX folders. In general they are all using the timestamped RDS file that is present in the RDS folder.
 
 # GWAS
-In the GWAS folder, we provide the two R scripts that are used to generate the GWAS results. Both for the pre-calculated GWAS ran for all phenotypes in the DGRPool database (running_GWAS.R), and for the user-submitted GWAS (running_GWAS_user.R)
+In the GWAS folder, we provide the two R scripts that are used to generate the GWAS results. Both for the pre-calculated GWAS ran for all phenotypes in the DGRPool database (running_GWAS.R), and for the user-submitted GWAS ([running_GWAS_user.R](GWAS/running_GWAS_user.R))
 
 # Online Website
 [https://dgrpool.epfl.ch/](https://dgrpool.epfl.ch/)
-[TEST](https://dgrpool.epfl.ch/)
