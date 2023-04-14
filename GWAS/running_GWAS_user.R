@@ -166,17 +166,17 @@ for(s in results$which_sex) {
 	## Running GWAS
 	list_values <- unique(plink.file_content[,3])
 	if(length(list_values) == 0){
-		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " [i = ", i, "]: No values.")
+		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : No values.")
 		message(results$results[[s]][["error_message"]])
 	} else if(length(list_values) == 1){
-		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " [i = ", i, "]: Non-variable phenotype.")
+		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : Non-variable phenotype.")
 		message(results$results[[s]][["error_message"]])
 	} else if(length(list_values) == 2 && all(sort(list_values) == c(0, 2))){
 		# Error: All samples for --glm phenotype 'S7_MB_32_M' are cases.
-		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " [i = ", i, "]: Values are only in [0, 2]. This is a specific Case/Control coding for PLINK2, can you change these values?")
+		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : Values are only in [0, 2]. This is a specific Case/Control coding for PLINK2, can you change these values?")
 		message(results$results[[s]][["error_message"]])
 	}	else if(length(list_values) == 2 && all(sort(list_values) == c(0, 1))){
-		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " [i = ", i, "]: Values are only in [0, 1]. This is a specific Case/Control coding for PLINK2, can you change these values?")
+		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : Values are only in [0, 1]. This is a specific Case/Control coding for PLINK2, can you change these values?")
 		message(results$results[[s]][["error_message"]])
 	} else{
 		## Covariate analysis (Anova)
@@ -210,7 +210,7 @@ for(s in results$which_sex) {
 		sink() # returns output to the console
 		
 		if(length(covars) + 2 >= nrow(plink.file_content)){
-			results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " [i = ", i, "]: # samples <= # predictor columns.")
+			results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : # samples <= # predictor columns.")
 			message(results$results[[s]][["error_message"]])
 		} else {
 			# PLINK 2.x 
@@ -221,7 +221,7 @@ for(s in results$which_sex) {
 			},
 			warning=function(cond) {
 				if(grepl(x = cond, pattern = "had status 7")) {
-					results$results[[s]][["error_message"]] <- paste0("ERROR [HAD STATUS 7] in processing phenotype ", phenotype_name, " [i = ", i, "]: # samples <= # predictor columns.")
+					results$results[[s]][["error_message"]] <- paste0("ERROR [HAD STATUS 7] in processing phenotype ", phenotype_name, " : # samples <= # predictor columns.")
 					message(results$results[[s]][["error_message"]])
 				} else {
 					# I redo it without catching the warnings... It's ugly I know
