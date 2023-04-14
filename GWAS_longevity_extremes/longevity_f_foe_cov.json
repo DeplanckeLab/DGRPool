@@ -1,0 +1,30 @@
+{
+  "pheno_file": "Arya_Longevity_F.tsv",
+  "genotype_file": "/data/gardeux/DGRPool/dgrp2",
+  "covariate_file": "/data/gardeux/DGRPool/GWAS_longevity_extremes/dgrp.cov.f.foe.tsv",
+  "annotation_file": "/data/gardeux/DGRPool/dgrp.fb557.annot.txt.gz",
+  "output_folder": "longevity_f_foe_cov/",
+  "nb_threads": 32,
+  "genotype_ratio": 0.2,
+  "min_maf": 0.05,
+  "pheno_column": 3,
+  "which_sex": "F",
+  "pheno_name": "Arya_Longevity_F",
+  "results": {
+    "F": {
+      "nb_used_dgrps": 132,
+      "plink_phenotype_file": "longevity_f_foe_cov/Arya_Longevity_F_F.pheno.plink2.tsv",
+      "covariate_anova_file": "longevity_f_foe_cov/Arya_Longevity_F_F.cov.anova.txt",
+      "plink_full_output_file": "longevity_f_foe_cov/Arya_Longevity_F_F.glm.linear",
+      "plink_full_log_file": "longevity_f_foe_cov/Arya_Longevity_F_F.glm.linear.log",
+      "gwas_file_suffix": ".glm.linear",
+      "gwas_model": "GLM Linear",
+      "gwas_type": "continuous (quantitative)",
+      "qq_plot": "longevity_f_foe_cov/Arya_Longevity_F_F.qqplot.png",
+      "qq_plot_pdf": "longevity_f_foe_cov/Arya_Longevity_F_F.qqplot.pdf",
+      "manhattan_plot": "longevity_f_foe_cov/Arya_Longevity_F_F.manhattan.png",
+      "manhattan_plot_pdf": "longevity_f_foe_cov/Arya_Longevity_F_F.manhattan.pdf",
+      "plink_filtered_output_file": "longevity_f_foe_cov/Arya_Longevity_F_F.glm.linear.top_0.01.annot.tsv.gz"
+    }
+  }
+} 
