@@ -3,12 +3,9 @@
 ## Script purpose: Pubmed barplot
 ## Version: 1.0.0
 ## Date Created: 2023 Mar 03
-## Date Modified: 2023 Mar 03
+## Date Modified: 2024 Jul 17
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
-
-# Working directory
-setwd("/data/gardeux/DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(data.table))
