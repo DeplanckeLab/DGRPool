@@ -31,12 +31,12 @@ phenotypes_information <- phenotypes_information[levels(data.annot_studies$Study
 phenotypes_information <- subset(phenotypes_information, !is.na(study_name))
 data.annot_studies$Study_Name <- phenotypes_information[as.character(data.annot_studies$Study), "study_name"]
 
-## Draw Histogram, By sex
-p <- ggplot(data.annot_studies, aes(x = Study, fill = Sex)) + geom_bar() + ylab("Number of phenotypes") + xlab("Study id") + theme(axis.line.y = element_line(linewidth = 0.3, colour = "black"), axis.line.x = element_line(linewidth = 0.3, colour = "black"), panel.grid.major.y = element_line(linewidth = 0.5, colour = "lightgrey"), panel.grid.major.x = element_blank(), panel.background = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_text(angle = 90, size = 6, hjust=0.95, vjust=0.2), legend.direction="horizontal", legend.position="top")
-p <- p + scale_fill_manual(values = c("#f28c28", "#0e4c92", "#cccc77"))
-ggsave(plot = p, filename = "NbPhenoPerStudy.plot.colored.by.sex.pdf", width = 8, height = 5)
+## Draw Histogram
+data.annot_studies <- data.annot_studies[,c(1,2,4)]
+data.annot_studies <- data.annot_studies[!duplicated(data.annot_studies),]
+p <- ggplot(data.annot_studies, aes(x = Study)) + geom_bar() + ylim(c(0,100)) + ylab("Number of phenotypes") + xlab("Study id") + theme(axis.line.y = element_line(linewidth = 0.3, colour = "black"), axis.line.x = element_line(linewidth = 0.3, colour = "black"), panel.grid.major.y = element_line(linewidth = 0.5, colour = "lightgrey"), panel.grid.major.x = element_blank(), panel.background = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_text(angle = 90, size = 6, hjust=0.95, vjust=0.2))
+ggsave(plot = p, filename = "NbPhenoPerStudy.plot.pdf", width = 8, height = 5)
 
-## Draw Histogram, By sex (x axis as REF study)
-p <- ggplot(data.annot_studies, aes(x = Study, fill = Sex)) + geom_bar() + scale_x_discrete(name = "", breaks = phenotypes_information$study_id, labels = phenotypes_information$study_name) + ylab("Number of phenotypes") + theme(axis.line.y = element_line(linewidth = 0.3, colour = "black"), axis.line.x = element_line(linewidth = 0.3, colour = "black"), panel.grid.major.y = element_line(linewidth = 0.5, colour = "lightgrey"), panel.grid.major.x = element_blank(), panel.background = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_text(angle = 90, size = 6, hjust=0.95, vjust=0.2), legend.direction="horizontal", legend.position="top")
-p <- p + scale_fill_manual(values = c("#f28c28", "#0e4c92", "#cccc77"))
-ggsave(plot = p, filename = "NbPhenoPerStudy.plot.colored.ref.by.sex.pdf", width = 8, height = 5)
+## Draw Histogram (x axis as REF study)
+p <- ggplot(data.annot_studies, aes(x = Study)) + geom_bar() + scale_x_discrete(name = "", breaks = phenotypes_information$study_id, labels = phenotypes_information$study_name) + ylim(c(0,100)) + ylab("Number of phenotypes") + theme(axis.line.y = element_line(linewidth = 0.3, colour = "black"), axis.line.x = element_line(linewidth = 0.3, colour = "black"), panel.grid.major.y = element_line(linewidth = 0.5, colour = "lightgrey"), panel.grid.major.x = element_blank(), panel.background = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_text(angle = 90, size = 6, hjust=0.95, vjust=0.2))
+ggsave(plot = p, filename = "NbPhenoPerStudy.plot.ref.pdf", width = 8, height = 5)
