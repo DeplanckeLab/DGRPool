@@ -3,25 +3,29 @@
 ## Script purpose: Downloading phenotypes using JSON API
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 22
-## Date Modified: 2023 Mar 21
+## Date Modified: 2024 Jul 15
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
-
-# Working directory
-setwd("DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(data.table))
 
+# Parameters
+output_file <- "data.all_pheno_15_07_24_filtered.rds"
+
 # Reading all studies
-json_studies <- fromJSON("https://dgrpool.epfl.ch/studies.json")
+download.file("https://dgrpool.epfl.ch/studies.json", destfile = "studies.json.gz")
+json_studies <- fromJSON(txt = "studies.json.gz")
+tmp <- file.remove("studies.json.gz")
 json_studies <- json_studies[with(json_studies, order(id)),]
 rownames(json_studies) <- json_studies$id
 message(nrow(json_studies), " studies found")
 
 # Reading all phenotypes
-json_phenotypes <- fromJSON("https://dgrpool.epfl.ch/phenotypes.json?all=1")
+download.file("https://dgrpool.epfl.ch/phenotypes.json?all=1", destfile = "phenotypes.json.gz")
+json_phenotypes <- fromJSON(txt = "phenotypes.json.gz")
+tmp <- file.remove("phenotypes.json.gz")
 json_phenotypes <- json_phenotypes[with(json_phenotypes, order(id)),]
 rownames(json_phenotypes) <- json_phenotypes$id
 message(nrow(json_phenotypes), " phenotypes found")
@@ -32,8 +36,11 @@ data.dgrp_lines <- data_dgrps$dgrp
 message(length(unique(data.dgrp_lines)), " DGRP lines found")
 
 total_phenotype_number <- 0
+nb_issues_pheno <- c()
+nb_obsolete_pheno <- c()
 nb_issues <- c()
 nb_obsolete <- c()
+studies_status <- c()
 
 # Reading each study
 tmp <- data.frame(dgrp = data.dgrp_lines)
@@ -42,7 +49,14 @@ data.all_pheno <- list("F" = tmp, "M" = tmp, "NA" = tmp)
 for(sid in json_studies$id) {
 	sub <- subset(json_studies, id == sid)
 	message("Study id = ", sid, "\ncreated at ", sub$created_at, ", modified at ", sub$updated_at)
-	json_study <- fromJSON(sub$url)
+	#json_study <- fromJSON(sub$url)
+	
+	download.file(sub$url, destfile = "pheno.json.gz")
+	json_study <- fromJSON(txt = "pheno.json.gz")
+	tmp <- file.remove("pheno.json.gz")
+	
+	studies_status <- c(studies_status, json_study$status_id)
+	
 	if(json_study$created_at != sub$created_at) stop("ERROR created at")
 	if(json_study$updated_at != sub$updated_at) stop("ERROR updated at")
 	message(json_study$authors, ", ", json_study$title, ", ", json_study$journal_id, " ", json_study$volume, "(", json_study$issue, "), ", json_study$year)
@@ -77,10 +91,12 @@ for(sid in json_studies$id) {
 					for(p in list_pheno){
 						data.subpheno <- subset(json_phenotypes, id == p)
 						if(nrow(data.subpheno) == 0){
-							nb_issues <- c(nb_issues, p)
+							nb_issues_pheno <- c(nb_issues_pheno, p)
+							nb_issues <- c(nb_issues, paste0("S", sid, "_", p, "_", s))
 						} else {
 							if(data.subpheno$obsolete){
-								nb_obsolete <- c(nb_obsolete, p)
+							  nb_obsolete_pheno <- c(nb_obsolete_pheno, p)
+							  nb_obsolete <- c(nb_obsolete, paste0("S", sid, "_", p, "_", s))
 							} else {
 								phe[dgrp, p] <- data_dgrp[[p]][data_dgrp$sex == s]
 							}
@@ -112,31 +128,48 @@ for(sid in json_studies$id) {
 	} else { message("No DGRP available for this study\n") }
 }
 
-## Stats
-nb_obsolete <- unique(nb_obsolete)
-nb_issues <- unique(nb_issues)
+## DEBUG
+nb_obsolete_pheno <- unique(nb_obsolete_pheno)
+nb_issues_pheno <- unique(nb_issues_pheno)
 message("Finished. Total number of phenotypes loaded: ", total_phenotype_number)
-message("Finished. Total number of phenotypes OBSOLETE: ", length(nb_obsolete))
-message("Finished. Total number of phenotypes WITH ISSUES: ", length(nb_issues))
+message("Finished. Total number of phenotypes OBSOLETE: ", length(nb_obsolete_pheno))
+message("Finished. Total number of phenotypes WITH ISSUES: ", length(nb_issues_pheno))
+
+## STATS
+names(studies_status) <- json_studies$id
+studies_status_tab <- as.data.frame(table(studies_status))
+rownames(studies_status_tab) <- studies_status_tab$studies_status
+
+message("- ", length(unique(data.dgrp_lines)), " DGRP lines")
+message("- ", nrow(json_studies), " studies")
+message("-- ", studies_status_tab["1", "Freq"], " submitted studies")
+message("-- ", studies_status_tab["2", "Freq"], " studies under curation")
+message("-- ", studies_status_tab["4", "Freq"], " curated studies")
+message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes")
 
 ## Filter NA poop
 for(sex in c("M", "F", "NA")){
 	to.keep <- apply(data.all_pheno[[sex]], 2, function(x) sum(is.na(x))) != nrow(data.all_pheno[[sex]])
 	data.all_pheno[[sex]] <- data.all_pheno[[sex]][,to.keep]
-	message("Sex ", sex, ": ", ncol(data.all_pheno[[sex]]) - 1, " phenotypes after removing NAs")
 }
 
 ## Check again
 phenotypes.all <- unique(c(colnames(data.all_pheno[["F"]])[2:ncol(data.all_pheno[["F"]])], colnames(data.all_pheno[["M"]])[2:ncol(data.all_pheno[["M"]])], colnames(data.all_pheno[["NA"]])[2:ncol(data.all_pheno[["NA"]])]))
-message("Number phenotypes = ", length(phenotypes.all))
-message("Number phenotypes (by sex) = ", ncol(data.all_pheno[["M"]]) + ncol(data.all_pheno[["F"]]) + ncol(data.all_pheno[["NA"]]) - 3)
+# Remove the first column, which is DGRP
+
+message("All studies")
+message(length(phenotypes.all), " phenotypes with associated data")
+message("- ", ncol(data.all_pheno[["M"]]) - 1, " phenotypes with male data") # Remove the first column, which is DGRP
+message("- ", ncol(data.all_pheno[["F"]]) - 1, " phenotypes with female data") # Remove the first column, which is DGRP
+message("- ", ncol(data.all_pheno[["NA"]]) - 1, " phenotypes with undefined sex data") # Remove the first column, which is DGRP
 
 message("Curated studies")
-message(sum(limma::strsplit2(x = phenotypes.all, split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with associated data")
-message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["M"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with male data")
-message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with female data")
-message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% paste0("S", 1:41)), " phenotypes with undefined sex data")
+curated_studies <- paste0("S", names(studies_status)[studies_status == 4])
+message(sum(limma::strsplit2(x = phenotypes.all, split = "_")[,1] %in% curated_studies), " phenotypes with associated data")
+message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["M"]]), split = "_")[,1] %in% curated_studies), " phenotypes with male data")
+message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = "_")[,1] %in% curated_studies), " phenotypes with female data")
+message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% curated_studies), " phenotypes with undefined sex data")
 
 ## Save object
-saveRDS(data.all_pheno, file = "RDS/data.all_pheno_21_03_23_filtered.rds")
+saveRDS(data.all_pheno, file = output_file)
 

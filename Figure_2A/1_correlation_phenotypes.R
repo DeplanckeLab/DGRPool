@@ -3,18 +3,15 @@
 ## Script purpose: Calculating phenotype-phenotype correlations,R2,p-value
 ## Version: 1.0.0
 ## Date Created: 2022 Dec 12
-## Date Modified: 2022 Mar 21
+## Date Modified: 2024 Jul 18
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
-
-# Working directory
-setwd("DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(data.table))
 
 ## Load phenotype data (run download_phenotypes.R script first)
-data.all_pheno <- readRDS(file = "RDS/data.all_pheno_21_03_23_filtered.rds")
+data.all_pheno <- readRDS(file = "../RDS/data.all_pheno_15_07_24_filtered.rds")
 
 ## Correlations
 allpheno <- c(paste0(colnames(data.all_pheno[["F"]]), "_F")[2:ncol(data.all_pheno[["F"]])], paste0(colnames(data.all_pheno[["M"]]), "_M")[2:ncol(data.all_pheno[["M"]])], paste0(colnames(data.all_pheno[["NA"]]), "_NA")[2:ncol(data.all_pheno[["NA"]])])
@@ -40,30 +37,34 @@ cnt <- 0
 for(sex_1 in c("F", "M", "NA")) {
 	phenotype_all_1 <- data.all_pheno[[sex_1]]
 	for(i in 2:ncol(phenotype_all_1)){ # First column is DGRP
-		phenotype_1 <- as.numeric(phenotype_all_1[,i])
-		phenotype_1_name <- paste0(colnames(phenotype_all_1)[i], "_", sex_1)
-		non_na_1 <- which(!is.na(phenotype_1))
-		dgrp_name_1 <- rownames(phenotype_all_1)[non_na_1]
+	  phenotype_1 <- NULL
+	  tryCatch({ phenotype_1 <<- as.numeric(phenotype_all_1[,i]) },
+	    warning = function(cond){ phenotype_1 <<- as.numeric(as.factor(phenotype_all_1[,i])) })
+	  names(phenotype_1) <- rownames(phenotype_all_1)
+	  phenotype_1_name <- paste0(colnames(phenotype_all_1)[i], "_", sex_1)
+		dgrp_name_1 <- names(phenotype_1)[which(!is.na(phenotype_1))]
 		
 		for(sex_2 in c("F", "M", "NA")) {
 			phenotype_all_2 <- data.all_pheno[[sex_2]]
 			for(j in 2:ncol(phenotype_all_2)){ # First column is DGRP
-				phenotype_2 <- as.numeric(phenotype_all_2[,j])
+			  phenotype_2 <- NULL
+			  tryCatch({ phenotype_2 <<- as.numeric(phenotype_all_2[,j]) },
+          warning = function(cond){ phenotype_2 <<- as.numeric(as.factor(phenotype_all_2[,j])) })
+			  names(phenotype_2) <- rownames(phenotype_all_2)
 				phenotype_2_name <- paste0(colnames(phenotype_all_2)[j], "_", sex_2)
-				non_na_2 <- which(!is.na(phenotype_2))
-				dgrp_name_2 <- rownames(phenotype_all_2)[non_na_2]
+				dgrp_name_2 <- names(phenotype_2)[which(!is.na(phenotype_2))]
 				dgrp_name <- intersect(dgrp_name_1, dgrp_name_2)
 				
 				# Compute correlation
 				if(length(dgrp_name) > 1)
 				{
-					phenotype_1 <- as.numeric(phenotype_all_1[dgrp_name,i])
-					phenotype_2 <- as.numeric(phenotype_all_2[dgrp_name,j])
-					if(var(phenotype_1) != 0 & var(phenotype_2) != 0)
+					phenotype_1_overlap <- phenotype_1[dgrp_name]
+					phenotype_2_overlap <- phenotype_2[dgrp_name]
+					if(var(phenotype_1_overlap) != 0 & var(phenotype_2_overlap) != 0)
 					{
-						c_pearson <- cor(phenotype_1, phenotype_2, method = "pearson")
-						c_spearman <- cor(phenotype_1, phenotype_2, method = "spearman")
-						suppressWarnings(data_regression <- summary(lm(phenotype_2 ~ phenotype_1)))
+						c_pearson <- cor(phenotype_1_overlap, phenotype_2_overlap, method = "pearson")
+						c_spearman <- cor(phenotype_1_overlap, phenotype_2_overlap, method = "spearman")
+						suppressWarnings(data_regression <- summary(lm(phenotype_2_overlap ~ phenotype_1_overlap)))
 						r2 <- data_regression$r.squared
 						if(nrow(data_regression$coefficients) == 2){ # If only 2 values, regression fails
 							pval <- data_regression$coefficients[2,4]
@@ -96,7 +97,7 @@ for(sex_1 in c("F", "M", "NA")) {
 ## Reorganize by study
 reorg_cols <- c()
 reorg_sex <- c()
-for(s in paste0("S",1:125)){
+for(s in paste0("S",1:max(as.numeric(gsub(x = limma::strsplit2(allpheno, split = "_")[,1], pattern = "S", replacement = ""))))){
 	data.this_study <- colnames(data.correlation_pearson)[startsWith(colnames(data.correlation_pearson), prefix = paste0(s,"_"))]
 	if(length(data.this_study) > 0){
 	reorg_cols <- c(reorg_cols, data.this_study)
