@@ -36,11 +36,13 @@ data.dgrp_lines <- data_dgrps$dgrp
 message(length(unique(data.dgrp_lines)), " DGRP lines found")
 
 total_phenotype_number <- 0
+total_phenotype_sex_specific <- 0
 nb_issues_pheno <- c()
 nb_obsolete_pheno <- c()
 nb_issues <- c()
 nb_obsolete <- c()
 studies_status <- c()
+no_phenotype_studies <- c()
 
 # Reading each study
 tmp <- data.frame(dgrp = data.dgrp_lines)
@@ -124,13 +126,16 @@ for(sid in json_studies$id) {
 			message("Available sex (",length(names(data_pheno)), "): [", paste(names(data_pheno), collapse = ", "), "]")
 			message("Available phenotypes (",ncol(data_pheno[[1]]) - 1, "): [", paste(colnames(data_pheno[[1]])[-1], collapse = ", "), "]\n")
 			total_phenotype_number <- total_phenotype_number + (ncol(data_pheno[[1]]) - 1)
-		} else { message("No phenotype available for this study\n") }
-	} else { message("No DGRP available for this study\n") }
+			total_phenotype_sex_specific <- total_phenotype_sex_specific + (ncol(data_pheno[[1]]) - 1) * length(names(data_pheno))
+		} else { no_phenotype_studies <<- c(no_phenotype_studies, sid); message("No phenotype available for this study\n") }
+	} else { no_phenotype_studies <<- c(no_phenotype_studies, sid); message("No DGRP available for this study\n") }
 }
 
 ## DEBUG
 nb_obsolete_pheno <- unique(nb_obsolete_pheno)
+nb_obsolete <- unique(nb_obsolete)
 nb_issues_pheno <- unique(nb_issues_pheno)
+nb_issues <- unique(nb_issues)
 message("Finished. Total number of phenotypes loaded: ", total_phenotype_number)
 message("Finished. Total number of phenotypes OBSOLETE: ", length(nb_obsolete_pheno))
 message("Finished. Total number of phenotypes WITH ISSUES: ", length(nb_issues_pheno))
@@ -139,13 +144,16 @@ message("Finished. Total number of phenotypes WITH ISSUES: ", length(nb_issues_p
 names(studies_status) <- json_studies$id
 studies_status_tab <- as.data.frame(table(studies_status))
 rownames(studies_status_tab) <- studies_status_tab$studies_status
+phenotypes.all.sex_specific <- unique(c(paste0(colnames(data.all_pheno[["F"]])[2:ncol(data.all_pheno[["F"]])], "_F"), paste0(colnames(data.all_pheno[["M"]])[2:ncol(data.all_pheno[["M"]])], "_M"), paste0(colnames(data.all_pheno[["NA"]])[2:ncol(data.all_pheno[["NA"]])], "_NA")))
 
 message("- ", length(unique(data.dgrp_lines)), " DGRP lines")
 message("- ", nrow(json_studies), " studies")
 message("-- ", studies_status_tab["1", "Freq"], " submitted studies")
 message("-- ", studies_status_tab["2", "Freq"], " studies under curation")
 message("-- ", studies_status_tab["4", "Freq"], " curated studies")
-message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes")
+message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes (", length(phenotypes.all.sex_specific) - length(nb_obsolete) - length(nb_issues), " sex-specific phenotypes"))
+message("- ", length(no_phenotype_studies), " studies WITHOUT phenotype data attached")
+message("- ", nrow(json_studies) - length(no_phenotype_studies), " studies WITH phenotype data attached")
 
 ## Filter NA poop
 for(sex in c("M", "F", "NA")){
@@ -154,11 +162,12 @@ for(sex in c("M", "F", "NA")){
 }
 
 ## Check again
+phenotypes.all.sex_specific <- unique(c(paste0(colnames(data.all_pheno[["F"]])[2:ncol(data.all_pheno[["F"]])], "_F"), paste0(colnames(data.all_pheno[["M"]])[2:ncol(data.all_pheno[["M"]])], "_M"), paste0(colnames(data.all_pheno[["NA"]])[2:ncol(data.all_pheno[["NA"]])], "_NA")))
 phenotypes.all <- unique(c(colnames(data.all_pheno[["F"]])[2:ncol(data.all_pheno[["F"]])], colnames(data.all_pheno[["M"]])[2:ncol(data.all_pheno[["M"]])], colnames(data.all_pheno[["NA"]])[2:ncol(data.all_pheno[["NA"]])]))
 # Remove the first column, which is DGRP
 
 message("All studies")
-message(length(phenotypes.all), " phenotypes with associated data")
+message(length(phenotypes.all), " phenotypes with associated data (", length(phenotypes.all.sex_specific ), " sex-specific phenotypes)")
 message("- ", ncol(data.all_pheno[["M"]]) - 1, " phenotypes with male data") # Remove the first column, which is DGRP
 message("- ", ncol(data.all_pheno[["F"]]) - 1, " phenotypes with female data") # Remove the first column, which is DGRP
 message("- ", ncol(data.all_pheno[["NA"]]) - 1, " phenotypes with undefined sex data") # Remove the first column, which is DGRP
