@@ -11,7 +11,7 @@
 suppressPackageStartupMessages(library(data.table))
 
 ## Load phenotype data (run download_phenotypes.R script first)
-data.all_pheno <- readRDS(file = "../RDS/data.all_pheno_15_07_24_filtered.rds")
+data.all_pheno <- readRDS(file = "RDS/data.all_pheno_15_07_24_filtered.rds")
 
 ## Correlations
 allpheno <- c(paste0(colnames(data.all_pheno[["F"]]), "_F")[2:ncol(data.all_pheno[["F"]])], paste0(colnames(data.all_pheno[["M"]]), "_M")[2:ncol(data.all_pheno[["M"]])], paste0(colnames(data.all_pheno[["NA"]]), "_NA")[2:ncol(data.all_pheno[["NA"]])])
@@ -110,10 +110,10 @@ for(s in paste0("S",1:max(as.numeric(gsub(x = limma::strsplit2(allpheno, split =
 	}
 }
 data.correlation_pearson <- data.correlation_pearson[reorg_cols, reorg_cols]
-fwrite(data.correlation_pearson, file = "phenotype_correlation_pearson.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+fwrite(data.correlation_pearson, file = "resources/phenotype_correlation_pearson.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.correlation_spearman <- data.correlation_spearman[reorg_cols, reorg_cols]
-fwrite(data.correlation_spearman, file = "phenotype_correlation_spearman.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+fwrite(data.correlation_spearman, file = "resources/phenotype_correlation_spearman.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.lm_r2 <- data.lm_r2[reorg_cols, reorg_cols]
-fwrite(data.lm_r2, file = "phenotype_regression_R2.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+fwrite(data.lm_r2, file = "resources/phenotype_regression_R2.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.lm_p <- data.lm_p[reorg_cols, reorg_cols]
-fwrite(data.lm_p, file = "phenotype_regression_pvalue.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+fwrite(data.lm_p, file = "resources/phenotype_regression_pvalue.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
