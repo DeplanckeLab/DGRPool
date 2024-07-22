@@ -59,20 +59,11 @@ for(i in 1:(nrow(data.correlation_spearman) - 1)){
 	}
 }
 
-# Barplot
+# Clean results
 results$Value <- abs(as.numeric(results$Value))
 results <- subset(results, !is.na(Value))
-data.sum <- summarise(group_by(results, Type), MD = median(Value), MN = mean(Value))
-p <- ggplot(results, aes(x = Type, y = Value, fill = Type)) + geom_boxplot(show.legend = FALSE, width=0.5) + theme_classic() + scale_fill_manual(values = c("#8ba8c8", "#E69A8DFF"))
-p <- p + stat_compare_means(method = "wilcox.test", paired = F, comparisons = list( c("Cross-study", "Within-study")))
-p <- p + geom_text(data = data.sum, aes(Type, MD, label = round(MD,3)), position = position_dodge(width = 0.8), size = 3, vjust = -0.5, color = "black")
-p <- p + xlab("") + ylab("Spearman's correlation")
-ggsave(p, filename = "boxplot.within.cross.study.pdf", width = 3, height = 4)
-#ggsave(p, filename = "boxplot.within.cross.study.png", width = 3, height = 4)
-message("Displayed values are median. Mean values are ", round(subset(data.sum, Type == "Cross-study")$MN, 3) , " for cross-study, and ", round(subset(data.sum, Type == "Within-study")$MN, 3), " for Within-study")
 
-# Barplot (curated)
-results <- subset(results, Curated == T)
+# Barplot
 data.sum <- summarise(group_by(results, Type), MD = median(Value), MN = mean(Value))
 p <- ggplot(results, aes(x = Type, y = Value, fill = Type)) + geom_boxplot(show.legend = FALSE, width=0.5) + theme_classic() + scale_fill_manual(values = c("#8ba8c8", "#E69A8DFF"))
 p <- p + stat_compare_means(method = "wilcox.test", paired = F, comparisons = list( c("Cross-study", "Within-study")))
