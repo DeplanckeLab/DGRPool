@@ -151,7 +151,7 @@ message("- ", nrow(json_studies), " studies")
 message("-- ", studies_status_tab["1", "Freq"], " submitted studies")
 message("-- ", studies_status_tab["2", "Freq"], " studies under curation")
 message("-- ", studies_status_tab["4", "Freq"], " curated studies")
-message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes (", length(phenotypes.all.sex_specific) - length(nb_obsolete) - length(nb_issues), " sex-specific phenotypes"))
+message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes (", length(phenotypes.all.sex_specific) - length(nb_obsolete) - length(nb_issues), " sex-specific phenotypes)")
 message("- ", length(no_phenotype_studies), " studies WITHOUT phenotype data attached")
 message("- ", nrow(json_studies) - length(no_phenotype_studies), " studies WITH phenotype data attached")
 
@@ -174,7 +174,7 @@ message("- ", ncol(data.all_pheno[["NA"]]) - 1, " phenotypes with undefined sex 
 
 message("Curated studies")
 curated_studies <- paste0("S", names(studies_status)[studies_status == 4])
-message(sum(limma::strsplit2(x = phenotypes.all, split = "_")[,1] %in% curated_studies), " phenotypes with associated data")
+message(sum(limma::strsplit2(x = phenotypes.all, split = "_")[,1] %in% curated_studies), " phenotypes with associated data (", sum(limma::strsplit2(phenotypes.all.sex_specific, split = "_")[,1] %in% curated_studies), " sex-specific phenotypes)")
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["M"]]), split = "_")[,1] %in% curated_studies), " phenotypes with male data")
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = "_")[,1] %in% curated_studies), " phenotypes with female data")
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["NA"]]), split = "_")[,1] %in% curated_studies), " phenotypes with undefined sex data")

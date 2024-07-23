@@ -19,10 +19,18 @@ allpheno <- c(paste0(colnames(data.all_pheno[["F"]]), "_F")[2:ncol(data.all_phen
 data.correlation_pearson <- data.frame(matrix(nrow = length(allpheno), ncol = length(allpheno)))
 colnames(data.correlation_pearson) <- allpheno
 rownames(data.correlation_pearson) <- allpheno
+# Create empty pvalue matrix
+data.pearson_p<- data.frame(matrix(nrow = length(allpheno), ncol = length(allpheno)))
+colnames(data.pearson_p) <- allpheno
+rownames(data.pearson_p) <- allpheno
 # Create empty correlation matrix
 data.correlation_spearman<- data.frame(matrix(nrow = length(allpheno), ncol = length(allpheno)))
 colnames(data.correlation_spearman) <- allpheno
 rownames(data.correlation_spearman) <- allpheno
+# Create empty pvalue matrix
+data.spearman_p<- data.frame(matrix(nrow = length(allpheno), ncol = length(allpheno)))
+colnames(data.spearman_p) <- allpheno
+rownames(data.spearman_p) <- allpheno
 # Create empty R2 matrix
 data.lm_r2<- data.frame(matrix(nrow = length(allpheno), ncol = length(allpheno)))
 colnames(data.lm_r2) <- allpheno
@@ -56,14 +64,18 @@ for(sex_1 in c("F", "M", "NA")) {
 				dgrp_name <- intersect(dgrp_name_1, dgrp_name_2)
 				
 				# Compute correlation
-				if(length(dgrp_name) > 1)
+				if(length(dgrp_name) > 2) # Correlation with 2 values makes no sense (cor = 1, p = NA, r2 = 1)
 				{
 					phenotype_1_overlap <- phenotype_1[dgrp_name]
 					phenotype_2_overlap <- phenotype_2[dgrp_name]
 					if(var(phenotype_1_overlap) != 0 & var(phenotype_2_overlap) != 0)
 					{
-						c_pearson <- cor(phenotype_1_overlap, phenotype_2_overlap, method = "pearson")
-						c_spearman <- cor(phenotype_1_overlap, phenotype_2_overlap, method = "spearman")
+					  pearson_res <- suppressWarnings(cor.test(phenotype_1_overlap, phenotype_2_overlap, method = "pearson"))
+						c_pearson <- pearson_res$estimate
+						p_pearson <- pearson_res$p.value
+						spearman_res <- suppressWarnings(cor.test(phenotype_1_overlap, phenotype_2_overlap, method = "spearman"))
+						c_spearman <- spearman_res$estimate
+						p_spearman <- spearman_res$p.value
 						suppressWarnings(data_regression <- summary(lm(phenotype_2_overlap ~ phenotype_1_overlap)))
 						r2 <- data_regression$r.squared
 						if(nrow(data_regression$coefficients) == 2){ # If only 2 values, regression fails
@@ -73,18 +85,24 @@ for(sex_1 in c("F", "M", "NA")) {
 						}
 					} else {
 						c_pearson <- NA
+						p_pearson <- NA
 						c_spearman <- NA
+						p_spearman <- NA
 						r2 <- NA
 						pval <- NA
 					}
 				} else {
 					c_pearson <- NA
+					p_pearson <- NA
 					c_spearman <- NA
+					p_spearman <- NA
 					r2 <- NA
 					pval <- NA
 				}
 				data.correlation_pearson[phenotype_1_name, phenotype_2_name] <- c_pearson
+				data.pearson_p[phenotype_1_name, phenotype_2_name] <- p_pearson
 				data.correlation_spearman[phenotype_1_name, phenotype_2_name] <- c_spearman
+				data.spearman_p[phenotype_1_name, phenotype_2_name] <- p_spearman
 				data.lm_r2[phenotype_1_name, phenotype_2_name] <- r2
 				data.lm_p[phenotype_1_name, phenotype_2_name] <- pval
 				cnt <- cnt + 1
@@ -111,8 +129,12 @@ for(s in paste0("S",1:max(as.numeric(gsub(x = limma::strsplit2(allpheno, split =
 }
 data.correlation_pearson <- data.correlation_pearson[reorg_cols, reorg_cols]
 fwrite(data.correlation_pearson, file = "resources/phenotype_correlation_pearson.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+data.pearson_p <- data.pearson_p[reorg_cols, reorg_cols]
+fwrite(data.pearson_p, file = "resources/phenotype_correlation_pearson_pvalue.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.correlation_spearman <- data.correlation_spearman[reorg_cols, reorg_cols]
 fwrite(data.correlation_spearman, file = "resources/phenotype_correlation_spearman.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
+data.spearman_p <- data.spearman_p[reorg_cols, reorg_cols]
+fwrite(data.spearman_p, file = "resources/phenotype_correlation_spearman_pvalue.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.lm_r2 <- data.lm_r2[reorg_cols, reorg_cols]
 fwrite(data.lm_r2, file = "resources/phenotype_regression_R2.tsv", row.names = T, col.names = T, quote = F, sep = "\t")
 data.lm_p <- data.lm_p[reorg_cols, reorg_cols]
