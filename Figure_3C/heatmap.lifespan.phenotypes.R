@@ -1,14 +1,11 @@
 ##################################################
 ## Project: DGRPool
-## Script purpose: Plotting phenotype-phenotype correlation heatmap for some meaningful phenotypes?
+## Script purpose: Plotting phenotype-phenotype correlation heatmap for some selected phenotypes
 ## Version: 1.0.0
 ## Date Created: 2023 Mar 22
-## Date Modified: 2023 Mar 23
+## Date Modified: 2024 Jul 24
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
-
-## Working directory
-setwd("/data/gardeux/DGRPool/")
 
 # Libraries
 suppressPackageStartupMessages(library(data.table))
@@ -17,7 +14,7 @@ suppressPackageStartupMessages(library(grid))
 suppressPackageStartupMessages(library(ggplot2))
 
 ## Load datasets
-data.correlation_spearman <- fread("phenotype_correlation_spearman.tsv", header = T, sep = "\t", data.table = F)
+data.correlation_spearman <- fread("../resources/phenotype_correlation_spearman.tsv", header = T, sep = "\t", data.table = F)
 rownames(data.correlation_spearman) <- data.correlation_spearman[,1]
 data.correlation_spearman <- data.correlation_spearman[,-1]
 
@@ -33,7 +30,7 @@ data.annot_studies <- subset(data.annot_studies, Phenotype %in% interesting_phen
 data.correlation_spearman <- data.correlation_spearman[rownames(data.annot_studies),rownames(data.annot_studies)]
 
 ## Format phenotypes
-phenotypes_information <- fread("phenotypes.tsv", data.table = F)
+phenotypes_information <- fread("../resources/phenotypes.tsv", data.table = F)
 rownames(phenotypes_information) <- phenotypes_information$phenotype_id
 phenotypes_information <- subset(phenotypes_information, phenotype_id %in% interesting_phenotypes)
 message(nrow(phenotypes_information), " phenotypes found")
@@ -48,11 +45,11 @@ for(phenotype in rownames(data.annot_studies)){
 data.heatmap <- data.correlation_spearman
 rownames(data.heatmap) <- formatted.phenotypes
 colnames(data.heatmap) <- formatted.phenotypes
-png("correlation_heatmap_spearman.png", width = 2200, height = 2000)
-pheatmap(data.heatmap, legend = T, scale = "none", color = colorRampPalette(c("blue", "white", "red"))(100), na_col="white", border_color ="white")
-dev.off()
+#png("correlation_heatmap_spearman.png", width = 2200, height = 2000)
+#pheatmap(data.heatmap, legend = T, scale = "none", color = colorRampPalette(c("blue", "white", "red"))(100), na_col="white", border_color ="white")
+#dev.off()
 
-pdf("correlation_heatmap_spearman.pdf", width = 22, height = 20)
+#pdf("correlation_heatmap_spearman.pdf", width = 22, height = 20)
 pheatmap(data.heatmap, legend = T, scale = "none", color = colorRampPalette(c("blue", "white", "red"))(100), na_col="white", border_color ="white")
-dev.off()
+#dev.off()
 
