@@ -17,7 +17,7 @@ nb_cores <- 24
 dgrp2_vcf_file <- "../../../dgrp2.filtered.fastlmm.vcf"
 dgrp2_annotation_file <- "../../../dgrp.fb557.annot.txt.gz"
 gwas_folder <- "../../../latest/"
-output_file_prefix <- "../resources/data.gwas_24_08_02_R"
+output_file_prefix <- "../resources/data.gwas_24_08_02"
 
 ## Functions
 toReadableTime = function(s){
