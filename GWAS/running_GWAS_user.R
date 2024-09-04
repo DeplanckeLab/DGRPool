@@ -3,7 +3,7 @@
 ## Script purpose: Running GWAS for user-submitted data
 ## Version: 1.0.0
 ## Date Created: 2023 Mar 29
-## Date Modified: 2023 Mar 29
+## Date Modified: 2024 Aug 06
 ## Author: Vincent Gardeux (vincent.gardeux@epfl.ch)
 ##################################################
 
@@ -13,30 +13,17 @@ start_time = Sys.time()
 # Global script options
 options(echo = F)
 args <- commandArgs(trailingOnly = TRUE)
-#args <- c("Study_42.txt", "/data/gardeux/DGRPool/dgrp2", "dgrp.cov.tsv", "dgrp.fb557.annot.txt.gz", "/data/gardeux/DGRPool/Prout", 1, 0.2, 0.05, "Ave. Social Space")
-#args <- c("/data/gardeux/DGRPool/GWAS_extreme/extreme_phenotype.tsv", "/data/gardeux/DGRPool/dgrp2", "/data/gardeux/DGRPool/dgrp.cov.tsv", "/data/gardeux/DGRPool/dgrp.fb557.annot.txt.gz", "/data/gardeux/DGRPool/GWAS_extreme/low_extreme/", 32, 0.2, 0.05, "low_extreme")
 
 ## Libraries
-suppressPackageStartupMessages(library(data.table))
-suppressPackageStartupMessages(library(jsonlite))
+suppressPackageStartupMessages(library(data.table)) # Fast reading of files
+suppressPackageStartupMessages(library(stringr)) # String utilities
 suppressPackageStartupMessages(library(ramwas)) # QQ-Plot & Manhattan plot
 suppressPackageStartupMessages(library(car)) # Covariate analysis
+suppressPackageStartupMessages(library(rstatix)) # Shapiro test
+suppressPackageStartupMessages(library(Cairo)) # For the - in front of -log10(P) y-axis of the PDF outputs
+suppressPackageStartupMessages(library(jsonlite)) # JSON output
 
 ## Functions
-toReadableTime = function(s){
-	s <- round(s)
-	if(s < 60) return(paste0(s, "s"))
-	mn <- s %/% 60
-	s <- s %% 60
-	if(mn < 60) return(paste0(mn, "mn ", s, "s"))
-	h <- mn %/% 60
-	mn <- mn %% 60
-	if(h < 24) return(paste0(h, "h ",  mn, "mn ", s, "s"))
-	d <- h %/% 24
-	h <- h %% 24
-	return(paste0(d, "d ", h, "h ", mn, "mn ", s, "s"))
-}
-
 stop_quietly <- function(){
 	opt <- options(show.error.messages = F)
 	on.exit(options(opt))
@@ -54,9 +41,9 @@ error.json <- function(displayed) {
 results <- list()
 
 # Parameters
-if(is.null(args) | length(args) < 8){
-	message("Usage: running_GWAS_user.R parameters\n1. [Required] Path to phenotype file\n2. [Required] Path to PLINK genotype file prefix (bed)\n3. [Required] Path to covariate file\n4. [Required] Path to annotation file\n5. [Required] Output folder path\n6. [Required] Number of threads\n7. [Required] Minimum genotyping ratio\n8. [Required] Minimum MAF\n9. [Optional] Name of phenotype to load (if file contains multiple phenotypes)")
-	error.json("You need to input at least 8 parameters: [Phenotype file path][Genotype file prefix][Covariate file path][Annotation file path][Output folder path][Number of threads][Genotype Ratio][Min MAF]")
+if(is.null(args) | length(args) < 9){
+	message("Usage: running_GWAS_user.R parameters\n1. [Required] Path to phenotype file\n2. [Required] Path to PLINK genotype file prefix (bed)\n3. [Required] Path to covariate file\n4. [Required] Path to annotation file\n5. [Required] Output folder path\n6. [Required] Number of threads\n7. [Required] Minimum genotyping ratio\n8. [Required] Minimum MAF\n9. [Required] Filtering threshold for p-value\n10. [Optional] Name of phenotype to load (if file contains multiple phenotypes)")
+	error.json("You need to input at least 9 parameters: [Phenotype file path][Genotype file prefix][Covariate file path][Annotation file path][Output folder path][Number of threads][Genotype Ratio][Min MAF]")
 }
 results$pheno_file <- args[1]
 results$genotype_file <- args[2]
@@ -69,14 +56,18 @@ if(!file.exists(results$output_folder)) dir.create(results$output_folder, mode =
 results$nb_threads <- as.numeric(args[6])
 results$genotype_ratio <- as.numeric(args[7])
 results$min_maf <- as.numeric(args[8])
+results$gwas_options <- paste0("--glm hide-covar --quantile-normalize --variance-standardize --geno ", results$genotype_ratio, " --maf ", results$min_maf) # --geno 0.2 --maf 0.01
+
+results$filtering_pval <- as.numeric(args[9])
+
 results$pheno_name <- NULL
 results$pheno_column <- 3 # Default phenotype to read
 results$which_sex <- "NA" # Default, in case no information
-if(length(args) == 9){
+if(length(args) == 10){
 	# Check if there is a "name" parameter
-	results$pheno_name <- args[9]
+	results$pheno_name <- args[10]
 }
-if(length(args) > 9) error.json("You entered too many parameters: ", length(args))
+if(length(args) > 10) error.json("You entered too many parameters: ", length(args))
 
 # Read user-submitted phenotyping data
 if(!file.exists(results$pheno_file)) error.json(paste0("This file: '",results$pheno_file,"' does not exist!"))
@@ -137,14 +128,6 @@ for(s in results$which_sex) {
 	suppressWarnings(phenotype <<- as.numeric(phenotype))
 	
 	## Fix weird names
-	#phenotype_name <- gsub(phenotype_name, pattern = " ", replacement = "_")
-	#phenotype_name <- gsub(phenotype_name, pattern = "\ub0", replacement = "") # degree sign
-	#phenotype_name <- gsub(phenotype_name, pattern = "\\(", replacement = "")
-	#phenotype_name <- gsub(phenotype_name, pattern = "\\)", replacement = "")
-	#phenotype_name <- gsub(phenotype_name, pattern = "-", replacement = "_")
-	#phenotype_name <- gsub(phenotype_name, pattern = "/", replacement = "_")
-	#phenotype_name <- gsub(phenotype_name, pattern = ":", replacement = "")
-	#phenotype_name <- gsub(phenotype_name, pattern = "%", replacement = "")
 	phenotype_name <- gsub(phenotype_name, pattern = "[^a-zA-Z0-9]+", replacement = "_")
 	
 	## Removing NAs
@@ -163,9 +146,22 @@ for(s in results$which_sex) {
 	results$results[[s]][["plink_phenotype_file"]] <- paste0(results$output_folder, phenotype_name, ".pheno.plink2.tsv")
 	fwrite(x = format(plink.file_content, nsmall = 1), file = results$results[[s]][["plink_phenotype_file"]], sep = "\t", quote = F, row.names = F, col.names = T, scipen=50)
 	
+	## Test for categorical phenotype
+	is_categorical <- F
+	tryCatch({
+	  tmp.var <- as.numeric(plink.file_content[[phenotype_name]])
+	}, warning=function(cond) {
+	  if(grepl(x = cond, pattern = "NAs introduced by coercion")) {
+	    is_categorical <<- T
+	  }
+	})
+	
 	## Running GWAS
 	list_values <- unique(plink.file_content[,3])
-	if(length(list_values) == 0){
+	if(is_categorical){
+	  results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " Categorical phenotype?")
+	  message(results$results[[s]][["error_message"]])
+	} else if(length(list_values) == 0){
 		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : No values.")
 		message(results$results[[s]][["error_message"]])
 	} else if(length(list_values) == 1){
@@ -179,10 +175,12 @@ for(s in results$which_sex) {
 		results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : Values are only in [0, 1]. This is a specific Case/Control coding for PLINK2, can you change these values?")
 		message(results$results[[s]][["error_message"]])
 	} else{
+	  
 		## Covariate analysis (Anova)
 		results$results[[s]][["covariate_anova_file"]] <- paste0(results$output_folder, phenotype_name, ".cov.anova.txt")
 		sink(results$results[[s]][["covariate_anova_file"]])
 		data.cov <- merge(plink.file_content, dgrp.cov, id = "family")
+		
 		## Testing variance of covariates
 		# Generate formula
 		covars <- c()
@@ -207,17 +205,41 @@ for(s in results$which_sex) {
 			results$results[[s]][["error_message"]] <- "ERROR: No invariant covariates??"
 			message(results$results[[s]][["error_message"]])
 		}
-		sink() # returns output to the console
 		
+		# Compute the normality test of Shapiro-Wilk
+		cat("Shapiro-Wilk test of normality:\n")
+		tryCatch( { 
+		  shapiro <- as.data.frame(shapiro_test(residuals(fit))) 
+		  cat(paste0('{\"shapiro\"={"statistic":', shapiro$statistic, ',"pvalue":', shapiro$p.value, '}}\n'))
+		  if(shapiro$p.value > 0.05) cat("Interpretation: NORMAL OK (p > 0.05)\n")
+		  if(shapiro$p.value <= 0.05) cat("Interpretation: NOT NORMAL (p <= 0.05)\n")
+		}, error = function(e) {cat("Shapiro test failed : all residuals values are identical\n")})
+		
+		# Kruskal-Wallis test
+		cat("\nKruskal-Wallis test\n")
+		kruskal.results <- data.frame(covariate = "TOTO", chisquared = -1,  df = -1, pvalue = -1)
+		for(cova in covars){
+		  res <- kruskal.test(as.formula(paste0(phenotype_name, " ~ ", cova)), data = data.cov)
+		  kruskal.results <- rbind(kruskal.results, data.frame(covariate = cova, chisquared = res$statistic, df = res$parameter, pvalue = res$p.value))
+		}
+		kruskal.results <- kruskal.results[-1,]
+		rownames(kruskal.results) <- NULL
+		cat(jsonlite::toJSON(kruskal.results))
+		
+		# returns output to the console
+		sink()
+		
+		# Process phenotypes
 		if(length(covars) + 2 >= nrow(plink.file_content)){
 			results$results[[s]][["error_message"]] <- paste0("ERROR in processing phenotype ", phenotype_name, " : # samples <= # predictor columns.")
 			message(results$results[[s]][["error_message"]])
 		} else {
-			# PLINK 2.x 
+			# Run PLINK 2.x 
 			std.out <- NULL
+			results$command_line_gwas <- paste0("plink2 --threads ", results$nb_threads, " ", results$gwas_options, " --covar ", results$covariate_file, " --bfile ", results$genotype_file, " --pheno \"", results$results[[s]]$plink_phenotype_file, "\" --out \"", results$output_folder, "PLINK2\"")
 			tryCatch(
 			{
-				std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno \"",results$results[[s]]$plink_phenotype_file,"\" --out \"", results$output_folder, "PLINK2\""), intern = T, ignore.stderr = T, ignore.stdout = F)
+			  std.out <<- system(results$command_line_gwas, intern = T, ignore.stderr = T, ignore.stdout = F)
 			},
 			warning=function(cond) {
 				if(grepl(x = cond, pattern = "had status 7")) {
@@ -225,7 +247,7 @@ for(s in results$which_sex) {
 					message(results$results[[s]][["error_message"]])
 				} else {
 					# I redo it without catching the warnings... It's ugly I know
-					std.out <<- system(paste0("plink2 --threads ",results$nb_threads," --glm hide-covar --geno ",results$genotype_ratio," --maf ",results$min_maf," --covar ", results$covariate_file," --bfile ", results$genotype_file," --pheno \"",results$results[[s]]$plink_phenotype_file,"\" --out \"", results$output_folder, "PLINK2\""), intern = T, ignore.stderr = T, ignore.stdout = F)
+				  std.out <<- system(results$command_line_gwas, intern = T, ignore.stderr = T, ignore.stdout = F)
 				}
 			})
 			
@@ -285,7 +307,7 @@ for(s in results$which_sex) {
 		
 					# SVG is way too big. So let's go PDF
 					# I recompute the plot... I know it's not optimal but I don't know how to do it else
-					pdf(results$results[[s]][["qq_plot_pdf"]], height = 7, width = 7)
+					CairoPDF(results$results[[s]][["qq_plot_pdf"]], height = 7, width = 7)
 					qqPlotFast(plink_results$P, ci.level = NULL, col = "black", makelegend = F, lwd = 1, newplot = T)
 					dev.off()
 					
@@ -301,12 +323,11 @@ for(s in results$which_sex) {
 					
 					# SVG is way too big. So let's go PDF
 					# I recompute the plot... I know it's not optimal but I don't know how to do it else
-					pdf(results$results[[s]][["manhattan_plot_pdf"]], height = 7, width = 7)
+					CairoPDF(results$results[[s]][["manhattan_plot_pdf"]], height = 7, width = 7)
 					manPlotFast(man = m, lwd = 1, colorSet = c("black", "darkgrey"))
 					dev.off()
 					
 					## Filtered top results and annotate them
-					plink_results <- subset(plink_results, P <= 0.01)
 					plink_results$P[plink_results$P == 1E-255] <- 0 # Putting it back
 					plink_results <- merge(plink_results, annotation.dr, by.x = "ID", by.y = "SNP")
 					plink_results <- plink_results[,c("#CHROM", "POS", "ID", "REF", "ALT", col6, "P", "FDR_BH", "gene_annotation", "regulatory_annotation")]
@@ -317,15 +338,28 @@ for(s in results$which_sex) {
 					plink_results$`#CHROM`[plink_results$`#CHROM` == 4] <- "3R"
 					plink_results$`#CHROM`[plink_results$`#CHROM` == 5] <- "X"
 					plink_results$`#CHROM`[plink_results$`#CHROM` == 6] <- "4"
-					fwrite(x = plink_results, file = paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv"), sep = "\t", quote = F, row.names = F, col.names = T)
-					system(paste0("gzip -f \"", results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv\""))
-					results$results[[s]][["plink_filtered_output_file"]] <- paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_0.01.annot.tsv.gz")
+					
+					# Writing full annotated file
+					fwrite(x = plink_results, file = paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".fdr.annot.tsv"), sep = "\t", quote = F, row.names = F, col.names = T)
+					system(paste0("gzip -f \"", results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".fdr.annot.tsv\""))
+					results$results[[s]][["plink_output_file"]] <- paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".fdr.annot.tsv.gz")
+					
+					# Filtering
+					plink_results <- subset(plink_results, P <= results$filtering_pval)
+					fwrite(x = plink_results, file = paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_", results$filtering_pval, ".annot.tsv"), sep = "\t", quote = F, row.names = F, col.names = T)
+					system(paste0("gzip -f \"", results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_", results$filtering_pval, ".annot.tsv\""))
+					results$results[[s]][["plink_filtered_output_file"]] <- paste0(results$output_folder, phenotype_name, results$results[[s]]$gwas_file_suffix, ".top_", results$filtering_pval, ".annot.tsv.gz")
+					
+					# Run gene enrichment script on Flybase phenotypes (PYTHON)
+					#system(paste0("python ", input_gene_enrichment_script, " ", output_gwas_directory, " ", input_flybase_phenotype_file, " ", input_ncsu_annot_file, " ", fstudy, " ", fphenotype, " ", fsex, " ", input_filtering_pval, " ", output_gwas_directory, "/", phenotype_name, file_suffix, ".top_", input_filtering_pval, ".gene_enrichment.phenotypes.tsv"))
+					
+					# Run gene enrichment script on GO terms (PYTHON)
+					#system(paste0("python ", input_gene_enrichment_script, " ", output_gwas_directory, " ", input_go_file, " ", input_ncsu_annot_file, " ", fstudy, " ", fphenotype, " ", fsex, " ", input_filtering_pval, " ", output_gwas_directory, "/", phenotype_name, file_suffix, ".top_", input_filtering_pval, ".gene_enrichment.go.tsv"))
 				}
 			}
 		}
 	}
 }
-message("Total time = ", toReadableTime(as.numeric(Sys.time() - start_time, unit = "secs")))
 
 # Output
 print(toJSON(results, pretty=TRUE, auto_unbox=TRUE))
