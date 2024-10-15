@@ -1,6 +1,9 @@
 # DGRPool
 Scripts used for generating figures of the DGRPool manuscript
 
+# Citation
+Please cite as: eLife2024;12:RP88981 DOI: https://doi.org/10.7554/eLife.88981.3
+
 # Online Website
 [https://dgrpool.epfl.ch/](https://dgrpool.epfl.ch/)
 
