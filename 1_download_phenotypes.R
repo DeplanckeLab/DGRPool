@@ -15,7 +15,7 @@ suppressPackageStartupMessages(library(data.table))
 output_file <- "data.all_pheno_15_07_24_filtered.rds"
 
 # Reading all studies
-download.file("https://dgrpool.epfl.ch/studies.json", destfile = "studies.json.gz")
+download.file("https://dgrpool.epfl.ch/studies.json", destfile = "studies.json.gz", quiet = T)
 json_studies <- fromJSON(txt = "studies.json.gz")
 tmp <- file.remove("studies.json.gz")
 json_studies <- json_studies[with(json_studies, order(id)),]
@@ -23,7 +23,7 @@ rownames(json_studies) <- json_studies$id
 message(nrow(json_studies), " studies found")
 
 # Reading all phenotypes
-download.file("https://dgrpool.epfl.ch/phenotypes.json?all=1", destfile = "phenotypes.json.gz")
+download.file("https://dgrpool.epfl.ch/phenotypes.json?all=1", destfile = "phenotypes.json.gz", quiet = T)
 json_phenotypes <- fromJSON(txt = "phenotypes.json.gz")
 tmp <- file.remove("phenotypes.json.gz")
 json_phenotypes <- json_phenotypes[with(json_phenotypes, order(id)),]
@@ -51,19 +51,20 @@ data.all_pheno <- list("F" = tmp, "M" = tmp, "NA" = tmp)
 for(sid in json_studies$id) {
 	sub <- subset(json_studies, id == sid)
 	message("Study id = ", sid, "\ncreated at ", sub$created_at, ", modified at ", sub$updated_at)
-	#json_study <- fromJSON(sub$url)
 	
-	download.file(sub$url, destfile = "pheno.json.gz")
-	json_study <- fromJSON(txt = "pheno.json.gz")
-	tmp <- file.remove("pheno.json.gz")
+	download.file(url = paste0("https://dgrpool.epfl.ch/studies/",sub$id,".json"), destfile = "study.json", quiet = T)
+	json_study <- fromJSON(txt = "study.json")
+	tmp <- file.remove("study.json")
 	
-	studies_status <- c(studies_status, json_study$status_id)
+	studies_status <- c(studies_status, json_study$status)
 	
 	if(json_study$created_at != sub$created_at) stop("ERROR created at")
 	if(json_study$updated_at != sub$updated_at) stop("ERROR updated at")
-	message(json_study$authors, ", ", json_study$title, ", ", json_study$journal_id, " ", json_study$volume, "(", json_study$issue, "), ", json_study$year)
+	message(json_study$first_author, " et al., ", json_study$title, ", ", json_study$journal_id, " ", json_study$volume, "(", json_study$issue, "), ", json_study$year)
+	message(length(json_study$phenotype_ids), " associated phenotypes")
+	
 	dgrp_lines <- names(json_study$pheno_mean)
-	#dgrp_lines <- names(json_study$pheno_sum)
+	
 	message(length(dgrp_lines), " DGRP lines")
 	data_pheno <- list() # List by sex
 	if(length(dgrp_lines) > 0){
@@ -71,7 +72,6 @@ for(sid in json_studies$id) {
 		list_pheno_all <- c()
 		for(dgrp in dgrp_lines){
 			data_dgrp <- json_study$pheno_mean[[dgrp]]
-			#data_dgrp <- json_study$pheno_sum[[dgrp]]
 			list_pheno_all <- unique(c(list_pheno_all, names(data_dgrp)[names(data_dgrp) != "sex"]))
 		}
 		if(length(list_pheno_all) >0){
@@ -148,9 +148,9 @@ phenotypes.all.sex_specific <- unique(c(paste0(colnames(data.all_pheno[["F"]])[2
 
 message("- ", length(unique(data.dgrp_lines)), " DGRP lines")
 message("- ", nrow(json_studies), " studies")
-message("-- ", studies_status_tab["1", "Freq"], " submitted studies")
-message("-- ", studies_status_tab["2", "Freq"], " studies under curation")
-message("-- ", studies_status_tab["4", "Freq"], " curated studies")
+message("-- ", studies_status_tab["Submitted", "Freq"], " submitted studies")
+message("-- ", studies_status_tab["Under curation", "Freq"], " studies under curation")
+message("-- ", studies_status_tab["Curated", "Freq"], " curated studies")
 message("- ", nrow(json_phenotypes) - length(nb_obsolete_pheno) - length(nb_issues_pheno), " phenotypes (", length(phenotypes.all.sex_specific) - length(nb_obsolete) - length(nb_issues), " sex-specific phenotypes)")
 message("- ", length(no_phenotype_studies), " studies WITHOUT phenotype data attached")
 message("- ", nrow(json_studies) - length(no_phenotype_studies), " studies WITH phenotype data attached")
@@ -173,7 +173,7 @@ message("- ", ncol(data.all_pheno[["F"]]) - 1, " phenotypes with female data") #
 message("- ", ncol(data.all_pheno[["NA"]]) - 1, " phenotypes with undefined sex data") # Remove the first column, which is DGRP
 
 message("Curated studies")
-curated_studies <- paste0("S", names(studies_status)[studies_status == 4])
+curated_studies <- paste0("S", names(studies_status)[studies_status == "Curated"])
 message(sum(limma::strsplit2(x = phenotypes.all, split = "_")[,1] %in% curated_studies), " phenotypes with associated data (", sum(limma::strsplit2(phenotypes.all.sex_specific, split = "_")[,1] %in% curated_studies), " sex-specific phenotypes)")
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["M"]]), split = "_")[,1] %in% curated_studies), " phenotypes with male data")
 message("- ", sum(limma::strsplit2(x = colnames(data.all_pheno[["F"]]), split = "_")[,1] %in% curated_studies), " phenotypes with female data")
